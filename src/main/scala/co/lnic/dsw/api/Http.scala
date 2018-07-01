@@ -13,6 +13,8 @@ class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {
     * - for each user create a kubernetes namespace, where the user can deploy clusters
     * - include some kind of monitoring of prices/budget/spending
     * - charts are helm charts, allow to override their settings
+    * - have the notion of environments / deployments?
+    * - deploy infrastructure too? like buckets
     */
 
   // other future cool things to do
@@ -25,10 +27,15 @@ class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {
       // admin / monitoring endpoints
       case GET -> Root / "console" =>
         // display version information and human readeable feedback
-        // on the state of the app
+        // on the state of the app:
+        // hostname
+        // uptime
+        // version
         Ok()
+
       case GET -> Root / "health" =>
-        // health check endpoint for kubernetes
+        // health check endpoint
+        // check connection to kubernetes master:
         Ok()
 
       case GET -> Root / "charts" =>
@@ -37,6 +44,9 @@ class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {
         Ok()
 
       case GET -> Root / "clusters" =>
+
+
+        
         // list all known clusters in the system
         // cluster are instances of a pre-configured definition
         Ok()
