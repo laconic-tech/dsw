@@ -38,6 +38,14 @@ class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {
         // check connection to kubernetes master:
         Ok()
 
+      case GET -> Root / "users" =>
+        Ok()
+
+      case GET -> Root / "users " / name =>
+        // dashboard for a user
+        // displaying it's workspace and existing clusters
+        Ok()
+
       case GET -> Root / "charts" =>
         // list preconfigured charts in the system
         // these can be used to create clusters that users can attach to
@@ -46,7 +54,6 @@ class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {
       case GET -> Root / "clusters" =>
 
 
-        
         // list all known clusters in the system
         // cluster are instances of a pre-configured definition
         Ok()

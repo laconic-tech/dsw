@@ -2,7 +2,7 @@ package co.lnic.dsw.infra.helm
 
 
 case class DeploymentStatus()
-case class
+case object Success
 
 trait HelmServiceAlgebra[F[_]] {
 
@@ -13,5 +13,5 @@ trait HelmServiceAlgebra[F[_]] {
              (dryRun: Boolean = false): F[Any] = ???
 
   def status(name: String): F[Either[String, DeploymentStatus]]
-  def delete(name: String): F[Either[String, DeleteSuccess]] = ???
+  def delete(name: String): F[Either[String, Success.type]] = ???
 }
