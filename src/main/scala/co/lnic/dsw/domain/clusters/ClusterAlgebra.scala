@@ -1,6 +1,8 @@
 package co.lnic.dsw.domain.clusters
 
-trait ClusterService[F[_]] {
+trait ClusterAlgebra[F[_]] {
+
+  def get(name: String): Option[Cluster]
 
   def provision(cluster: Cluster): F[Either[String, Unit]]
 
@@ -10,3 +12,4 @@ trait ClusterService[F[_]] {
 
   def tearDown(cluster: Cluster): F[Either[String, Unit]]
 }
+

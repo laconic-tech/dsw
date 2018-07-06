@@ -1,14 +1,13 @@
 package co.lnic.dsw.api
 
-import co.lnic.dsw.domain.clusters.ClusterService
-
+import co.lnic.dsw.domain.clusters.ClusterAlgebra
 import cats.effect.Effect
 import org.http4s.HttpService
 import org.http4s.dsl.Http4sDsl
 
 class UserEndpoints[F[_]: Effect] extends Http4sDsl[F] {
   
-  def create(clusterService: ClusterService[F]): HttpService[F] =
+  def create(clusterService: ClusterAlgebra[F]): HttpService[F] =
     HttpService[F] {
 
       case GET -> Root / "users" / name =>

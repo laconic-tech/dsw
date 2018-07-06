@@ -14,11 +14,11 @@ object App extends StreamApp[IO] {
 
 object ServerStream {
 
-  def service[F[_]: Effect] = new WorkbenchService[F].service
+  def workbenchService[F[_]: Effect] = new WorkbenchService[F].service
 
   def stream[F[_]: Effect](implicit ec: ExecutionContext) =
     BlazeBuilder[F]
       .bindHttp(8080, "0.0.0.0")
-      .mountService(service, "/")
+      .mountService(workbenchService, "/")
       .serve
 }
