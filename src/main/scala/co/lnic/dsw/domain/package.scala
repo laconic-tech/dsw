@@ -1,5 +1,7 @@
 package co.lnic.dsw.domain
 
+import java.util.UUID
+
 package object domain {
 
   // users and roles
@@ -8,6 +10,7 @@ package object domain {
 
   // cluster definitions
   case class ClusterSpecification(name: String,
+                                  chart: String, // URI to tiller repo?
                                   services: Seq[ExposedService],
                                   status: ClusterSpecificationStatus)
 
@@ -18,10 +21,12 @@ package object domain {
   sealed trait ServiceProtocol
   case object Http extends ServiceProtocol
   case object SSH extends ServiceProtocol
+  // case object KernelProxy extends ServiceProtocol // example of other backends
+
 
   // supported cluster spec status
   sealed trait ClusterSpecificationStatus
-  case object Enabled extends ClusterSpecificationStatus
+  case object Active extends ClusterSpecificationStatus
   case object Disabled extends ClusterSpecificationStatus
 
   // resources
@@ -33,4 +38,5 @@ package object domain {
   case object Private extends Visibility
 
   // cluster instances
+  case class Cluster(id: UUID, name: String, namespace: String, )
 }

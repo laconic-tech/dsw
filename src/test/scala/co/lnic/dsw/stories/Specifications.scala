@@ -12,7 +12,13 @@ class UserSpec extends Specification {
   feature("Request Access to other user's provisioned resources")
   feature("Share one of my resources with another user")
   feature("Share one of my resources with an external user")
-  feature("Request Access to the `Shared Area`")
+
+  feature("Be able to set rules on when a cluster has to be shutdown") {
+    scenario("Shutdown a cluster after a number of hours")
+    scenario("Shutdown a cluster after a period of inactivity")
+    scenario("Shutdown a cluster after spending threshold")
+  }
+
 }
 
 
@@ -22,7 +28,8 @@ class StorageResourcesSpec extends Specification {
   info("I would like to be able to keep my data stored securely")
   info("and available from every cluster I provision")
   info("so that my data is not lost after a cluster is stopped")
-  info("and also so that ")
+
+
 }
 
 class ClusterProvisioningSpec extends Specification {
@@ -31,8 +38,16 @@ class ClusterProvisioningSpec extends Specification {
   info("I want to be able to provision a cluster on-demand")
   info("so that I perform tasks as data analysis")
 
-  feature("Listing available Cluster specifications")
-  feature("Provision a cluster from a specification")
+  feature("Listing available Cluster specifications") {
+    // simple list of all clusters that this user can create
+  }
+
+  feature("Provision a cluster from a specification") {
+    // we should attach all of the users storage options
+    // additionally allow to attach other resources on all of the containers
+  }
+
+  feature("Scale up / down a running cluster")
   feature("Stop a previously provisioned cluster")
   feature("Start an stopped cluster")
   feature("Restart a cluster")
@@ -49,7 +64,25 @@ class ClusterDefinitionSpec extends Specification {
     scenario("Create a definition based on an external helm chart")
     scenario("Create a definition based on an existing cluster definition")
     scenario("Create a definition where certain values can be overridden at provisioning time")
+    scenario("Create a definition that exposes an SSH session and an Http service") {
+      // so that when a user starts an instance up, we can proxy and expose them in the UI/server
+    }
+
+    scenario("Define ranges on valid number of instances")
   }
 
   feature("Enable/Disable creation of instances on a cluster")
+}
+
+class UserAssignedBudgetReport extends Specification {
+  // be able to define a budget for an analyst or a group of them
+  // and track progress against it
+}
+
+class UserSpendingReportingSpec extends Specification {
+  info("As a `Data Analyst`")
+  info("I want to know an estimate of how much I've spent on a given instance")
+
+  feature("Spending estimate on a running cluster")
+  feature("Spending on a User")
 }
