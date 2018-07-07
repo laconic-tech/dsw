@@ -10,6 +10,7 @@ import org.microbean.helm._
 import org.microbean.helm.chart.URLChartLoader
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class DeploymentStatus(description: String)
 case object Success
@@ -26,19 +27,27 @@ trait ChartAlgebra[F[_]] {
   def delete(name: String): F[Either[String, Success.type]]
 }
 
-class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[IO] {
+class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Future] {
 
-  private def getTiller: IO[ReleaseManager] = IO {
-    val client = new DefaultKubernetesClient()
-    val tiller = new Tiller(client)
-    new ReleaseManager(tiller)
+  private def getTiller: Either[String, ReleaseManager] = {
+    Try {
+      val client = new DefaultKubernetesClient()
+      val tiller = new Tiller(client)
+      new ReleaseManager(tiller)
+    }.toEither
+      .left
+      .map(_.getMessage)
   }
 
-  private def loadChart(chartUrl: String): IO[ChartOuterClass.Chart.Builder] = IO {
-    val url = URI.create(chartUrl).toURL()
-    val loader = new URLChartLoader()
-    // load the chart from the given url
-    loader.load(url)
+  private def loadChart(chartUrl: String): Either[String, ChartOuterClass.Chart.Builder] = {
+    Try {
+      val url = URI.create(chartUrl).toURL()
+      val loader = new URLChartLoader()
+      // load the chart from the given url
+      loader.load(url)
+    }.toEither
+      .left
+      .map(_.getMessage)
   }
 
   private def fromJavaFuture[T](f: java.util.concurrent.Future[T]): IO[T] = {
@@ -54,7 +63,7 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[IO] {
   override def install(name: String,
                        chart: String,
                        namespace: String,
-                       values: Map[String, String])(dryRun: Boolean): IO[Any] = {
+                       values: Map[String, String])(dryRun: Boolean): Future[Any] = {
 
     // install request
     val req = InstallReleaseRequest
@@ -70,7 +79,7 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[IO] {
     } yield result
   }
 
-  override def status(name: String): IO[DeploymentStatus] = {
+  override def status(name: String): Future[DeploymentStatus] = {
     val req = GetReleaseStatusRequest
       .newBuilder()
       .setName(name)
@@ -82,5 +91,5 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[IO] {
     } yield DeploymentStatus(result.getInfo.getStatus.getCode.name())
   }
 
-  override def delete(name: String): IO[Either[String, Success.type]] = ???
+  override def delete(name: String): Future[Either[String, Success.type]] = ???
 }

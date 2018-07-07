@@ -17,6 +17,8 @@ libraryDependencies ++= Seq(
   "org.microbean" % "microbean-helm" % "2.8.2.1.1.0" exclude("io.netty", "netty-tcnative-boringssl-static"),
 
   // converterss
-  "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0"
+  "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
 
+  // testing
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
