@@ -1,69 +1,88 @@
 package co.lnic.dsw.infra.helm
 
-import java.net.URI
-
-import cats.effect._
+import better.files.File
+import cats.data.EitherT
+import cats.implicits._
+import co.lnic.dsw.pimps.Futures.JavaFutureConverter
 import hapi.chart.ChartOuterClass
-import hapi.services.tiller.Tiller.{GetReleaseStatusRequest, InstallReleaseRequest}
+import hapi.release.StatusOuterClass.Status.Code
+import hapi.services.tiller.Tiller.GetReleaseStatusRequest
+import hapi.services.tiller.Tiller.InstallReleaseRequest
+import hapi.services.tiller.Tiller.InstallReleaseResponse
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.microbean.helm._
-import org.microbean.helm.chart.URLChartLoader
+import org.microbean.helm.chart.DirectoryChartLoader
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 
-case class DeploymentStatus(description: String)
-case object Success
+
+sealed trait DeploymentStatus
+case object Unknown extends DeploymentStatus
+case object InProgress extends DeploymentStatus
+case object Success extends DeploymentStatus
+case object Decomissioned extends DeploymentStatus
 
 trait ChartAlgebra[F[_]] {
 
   def install(name: String,
               chart: String,
               namespace: String,
-              values: Map[String, String])
-             (dryRun: Boolean = false): F[Any]
+              values: Map[String, String],
+              dryRun: Boolean = false): EitherT[F, String, InstallReleaseResponse]
 
-  def status(name: String): F[DeploymentStatus]
-  def delete(name: String): F[Either[String, Success.type]]
+  def status(name: String): EitherT[F, String, DeploymentStatus]
+  def delete(name: String): EitherT[F, String, Success.type]
 }
 
 class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Future] {
 
-  private def getTiller: Either[String, ReleaseManager] = {
-    Try {
-      val client = new DefaultKubernetesClient()
-      val tiller = new Tiller(client)
-      new ReleaseManager(tiller)
-    }.toEither
-      .left
-      .map(_.getMessage)
+  def runJ[R](f: ReleaseManager => java.util.concurrent.Future[R]) = {
+    run(rm => f(rm).toScala())
   }
 
-  private def loadChart(chartUrl: String): Either[String, ChartOuterClass.Chart.Builder] = {
-    Try {
-      val url = URI.create(chartUrl).toURL()
-      val loader = new URLChartLoader()
-      // load the chart from the given url
-      loader.load(url)
-    }.toEither
-      .left
-      .map(_.getMessage)
-  }
+  def run[R](f: ReleaseManager => Future[R]): EitherT[Future, String, R] = {
+    EitherT {
+      Try {
+        val client = new DefaultKubernetesClient()
+        val tiller = new Tiller(client)
+        val rm = new ReleaseManager(tiller)
 
-  private def fromJavaFuture[T](f: java.util.concurrent.Future[T]): IO[T] = {
-    IO.fromFuture {
-      IO {
-        Future {
-          f.get()
+        try {
+          f(rm)
         }
+        finally {
+          rm.close()
+        }
+      }.toEither
+        .left
+        .map(_.getMessage)
+        .left.map(Future.successful)
+        .bisequence
       }
     }
-  }
+
+  private def loadChart(path: String): EitherT[Future, String, ChartOuterClass.Chart.Builder] =
+    EitherT {
+      val r = Try {
+        val location = File(path).path
+        val loader = new DirectoryChartLoader()
+        // load the chart from the given url
+        loader.load(location)
+      }.toEither
+        .left
+        .map(_.getMessage)
+
+      r.pure[Future]
+    }
+
 
   override def install(name: String,
                        chart: String,
                        namespace: String,
-                       values: Map[String, String])(dryRun: Boolean): Future[Any] = {
+                       values: Map[String, String],
+                       dryRun: Boolean): EitherT[Future, String, InstallReleaseResponse] = {
 
     // install request
     val req = InstallReleaseRequest
@@ -73,23 +92,32 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Futur
       .setDryRun(dryRun)
 
     for {
-      chart  <- loadChart(chart)
-      client <- getTiller
-      result <- fromJavaFuture(client.install(req, chart))
+      release <- loadChart(chart)
+      result <- runJ(_.install(req, release))
     } yield result
   }
 
-  override def status(name: String): Future[DeploymentStatus] = {
+  override def status(name: String): EitherT[Future, String, DeploymentStatus] = {
     val req = GetReleaseStatusRequest
       .newBuilder()
       .setName(name)
       .build()
 
-    for {
-      tiller <- getTiller
-      result <- fromJavaFuture(tiller.getStatus(req))
-    } yield DeploymentStatus(result.getInfo.getStatus.getCode.name())
+    run { helm =>
+      helm.getStatus(req)
+        .toScala()
+        .map(status => status.getInfo.getStatus.getCode)
+        .map {
+          case Code.DEPLOYED => Success
+          case Code.DELETED | Code.FAILED => Decomissioned
+          case Code.PENDING_INSTALL | Code.PENDING_UPGRADE => InProgress
+          case _ => Unknown
+        }
+        .recover {
+          case _ => Unknown
+        }
+    }
   }
 
-  override def delete(name: String): Future[Either[String, Success.type]] = ???
+  override def delete(name: String): EitherT[Future, String, Success.type] = ???
 }

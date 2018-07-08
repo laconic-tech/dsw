@@ -19,6 +19,9 @@ libraryDependencies ++= Seq(
   // converterss
   "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
 
+  // tools
+  "com.github.pathikrit" %% "better-files" % "3.5.0",
+
   // testing
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )

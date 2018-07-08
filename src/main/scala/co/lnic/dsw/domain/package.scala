@@ -38,5 +38,5 @@ package object domain {
   case object Private extends Visibility
 
   // cluster instances
-  case class Cluster(id: UUID, name: String, namespace: String, )
+  case class Cluster(id: UUID, name: String, namespace: String)
 }
