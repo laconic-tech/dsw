@@ -12,7 +12,6 @@ import hapi.services.tiller.Tiller.InstallReleaseResponse
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.kamranzafar.jtar.TarInputStream
 import org.microbean.helm._
-import org.microbean.helm.chart.DirectoryChartLoader
 import org.microbean.helm.chart.TapeArchiveChartLoader
 
 import scala.concurrent.ExecutionContext
@@ -40,45 +39,32 @@ trait ChartAlgebra[F[_]] {
 
 class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Future] {
 
-  def runJ[R](f: ReleaseManager => java.util.concurrent.Future[R]) = {
-    run(rm => f(rm).toScala())
-  }
+  type ChartBuilder = ChartOuterClass.Chart.Builder
+  type InstallChart = ChartBuilder => InstallReleaseRequest
 
-  def run[R](f: ReleaseManager => Future[R]): EitherT[Future, String, R] = {
-    EitherT {
-      Try {
-        val client = new DefaultKubernetesClient()
-        val tiller = new Tiller(client)
-        val rm = new ReleaseManager(tiller)
+  def run[R](f: Tiller => R): Either[String, R] =
+    Try {
+      val client = new DefaultKubernetesClient()
+      val tiller = new Tiller(client)
 
-        try {
-          f(rm)
-        }
-        finally {
-          rm.close()
-        }
-      }.toEither
-        .left
-        .map(_.getMessage)
-        .left.map(Future.successful)
-        .bisequence
+      try {
+        f(tiller)
       }
-    }
+      finally {
+        tiller.close()
+        client.close()
+      }
+    }.toEither
+     .left.map(_.getMessage)
 
-  private def loadChart(path: String): EitherT[Future, String, ChartOuterClass.Chart.Builder] =
-    EitherT {
-      val r = Try {
+  private def loadChart(path: String): Either[String, ChartBuilder] =
+      Try {
         val tar = new TarInputStream(File(path).newGzipInputStream())
-        val loader = new TapeArchiveChartLoader()
-        // load the chart from the given url
-        loader.load(tar)
+        new TapeArchiveChartLoader()
+          .load(tar)
       }.toEither
-        .left
-        .map(_.getMessage)
-
-      r.pure[Future]
-    }
-
+       .left
+       .map(_.getMessage)
 
   override def install(name: String,
                        chart: String,
@@ -86,38 +72,47 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Futur
                        values: Map[String, String],
                        dryRun: Boolean): EitherT[Future, String, InstallReleaseResponse] = {
 
-    // install request
-    val req = InstallReleaseRequest
-      .newBuilder()
-      .setName(name)
-      .setNamespace(namespace)
-      .setDryRun(dryRun)
+    // install request helper func
+    val prepare: InstallChart = b => InstallReleaseRequest
+        .newBuilder()
+        .setName(name)
+        .setNamespace(namespace)
+        .setDryRun(dryRun)
+        .setChart(b)
+        .setValues(b.getValues)
+        .build()
 
-    for {
-      release <- loadChart(chart)
-      result <- runJ(_.install(req, release))
-    } yield result
+    EitherT {
+      Future {
+        for {
+          release <- loadChart(chart)
+          response <- run(tiller => tiller.getReleaseServiceBlockingStub.installRelease(prepare(release)))
+        } yield response
+      }
+    }
   }
 
   override def status(name: String): EitherT[Future, String, DeploymentStatus] = {
-    val req = GetReleaseStatusRequest
+    val request = GetReleaseStatusRequest
       .newBuilder()
       .setName(name)
       .build()
 
-    run { helm =>
-      helm.getStatus(req)
-        .toScala()
-        .map(status => status.getInfo.getStatus.getCode)
-        .map {
-          case Code.DEPLOYED => Success
-          case Code.DELETED | Code.FAILED => Decomissioned
-          case Code.PENDING_INSTALL | Code.PENDING_UPGRADE => InProgress
-          case _ => Unknown
+    EitherT {
+      Future {
+        run { tiller =>
+          val response = tiller.getReleaseServiceBlockingStub.getReleaseStatus(request)
+
+          response.getInfo.getStatus.getCode match {
+            case Code.DEPLOYED => Success
+            case Code.DELETED | Code.FAILED => Decomissioned
+            case Code.PENDING_INSTALL | Code.PENDING_UPGRADE => InProgress
+            case _ => Unknown
+          }
         }
-        .recover {
-          case _ => Unknown
-        }
+      }.recover {
+        case _ => Right(Unknown)
+      }
     }
   }
 
