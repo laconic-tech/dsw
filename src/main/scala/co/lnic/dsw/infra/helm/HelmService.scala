@@ -10,8 +10,10 @@ import hapi.services.tiller.Tiller.GetReleaseStatusRequest
 import hapi.services.tiller.Tiller.InstallReleaseRequest
 import hapi.services.tiller.Tiller.InstallReleaseResponse
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
+import org.kamranzafar.jtar.TarInputStream
 import org.microbean.helm._
 import org.microbean.helm.chart.DirectoryChartLoader
+import org.microbean.helm.chart.TapeArchiveChartLoader
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -66,10 +68,10 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Futur
   private def loadChart(path: String): EitherT[Future, String, ChartOuterClass.Chart.Builder] =
     EitherT {
       val r = Try {
-        val location = File(path).path
-        val loader = new DirectoryChartLoader()
+        val tar = new TarInputStream(File(path).newGzipInputStream())
+        val loader = new TapeArchiveChartLoader()
         // load the chart from the given url
-        loader.load(location)
+        loader.load(tar)
       }.toEither
         .left
         .map(_.getMessage)

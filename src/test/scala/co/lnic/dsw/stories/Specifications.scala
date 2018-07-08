@@ -84,3 +84,8 @@ class UserSpendingReportingSpec extends Specification {
   feature("Spending estimate on a running cluster") _
   feature("Spending on a User") _
 }
+
+class DashboardSpec extends Specification {
+  scenario("Show number of resources available/used") _
+  scenario("Show health indicators") _
+}
