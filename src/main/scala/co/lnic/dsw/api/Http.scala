@@ -1,9 +1,7 @@
 package co.lnic.dsw.api
 
 import cats.effect.Effect
-import io.circe.Json
 import org.http4s.HttpService
-import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 
 class WorkbenchService[F[_]: Effect] extends Http4sDsl[F] {

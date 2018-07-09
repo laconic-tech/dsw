@@ -2,8 +2,6 @@ package co.lnic.dsw.infra.helm
 
 import better.files.File
 import cats.data.EitherT
-import cats.implicits._
-import co.lnic.dsw.pimps.Futures.JavaFutureConverter
 import hapi.chart.ChartOuterClass
 import hapi.release.StatusOuterClass.Status.Code
 import hapi.services.tiller.Tiller.GetReleaseStatusRequest
@@ -29,15 +27,13 @@ trait ChartAlgebra[F[_]] {
 
   def install(name: String,
               chart: String,
-              namespace: String,
-              values: Map[String, String],
-              dryRun: Boolean = false): EitherT[F, String, InstallReleaseResponse]
+              namespace: String): EitherT[F, String, InstallReleaseResponse]
 
   def status(name: String): EitherT[F, String, DeploymentStatus]
   def delete(name: String): EitherT[F, String, Success.type]
 }
 
-class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Future] {
+class TillerInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Future] {
 
   type ChartBuilder = ChartOuterClass.Chart.Builder
   type InstallChart = ChartBuilder => InstallReleaseRequest
@@ -68,16 +64,13 @@ class ChartInterpreter(implicit ec: ExecutionContext) extends ChartAlgebra[Futur
 
   override def install(name: String,
                        chart: String,
-                       namespace: String,
-                       values: Map[String, String],
-                       dryRun: Boolean): EitherT[Future, String, InstallReleaseResponse] = {
+                       namespace: String): EitherT[Future, String, InstallReleaseResponse] = {
 
     // install request helper func
     val prepare: InstallChart = b => InstallReleaseRequest
         .newBuilder()
         .setName(name)
         .setNamespace(namespace)
-        .setDryRun(dryRun)
         .setChart(b)
         .setValues(b.getValues)
         .build()

@@ -1,18 +1,22 @@
 package co.lnic.dsw.domain
 
+import java.nio.file.Path
 import java.util.UUID
 
 package object domain {
 
   // users and roles
   type UserId = String
-  case class User(id: UserId, name: String, email: String)
+  type ApplicationId = UUID
+  case class ApplicationSpecId(name: String, version: Short = 1)
+
+  case class User(id: UserId, name: String, email: String, namespace: String)
 
   // cluster definitions
-  case class ClusterSpecification(name: String,
-                                  chart: String, // URI to tiller repo?
-                                  services: Seq[ExposedService],
-                                  status: ClusterSpecificationStatus)
+  case class ApplicationSpec(id: ApplicationSpecId,
+                             chart: Path,
+                             services: Seq[ExposedService],
+                             status: ClusterSpecificationStatus)
 
   // an specification can expose services
   case class ExposedService(name: String, description: String, iconUri: Option[String], protocol: ServiceProtocol, port: Int)
@@ -21,7 +25,7 @@ package object domain {
   sealed trait ServiceProtocol
   case object Http extends ServiceProtocol
   case object SSH extends ServiceProtocol
-  // case object KernelProxy extends ServiceProtocol // example of other backends
+  // case object JupyterKernelProxy extends ServiceProtocol // example of other backends
 
 
   // supported cluster spec status
@@ -38,5 +42,14 @@ package object domain {
   case object Private extends Visibility
 
   // cluster instances
-  case class Cluster(id: UUID, name: String, namespace: String)
+  case class Application(id: ApplicationId, name: String, namespace: String, applicationSpecId: ApplicationSpecId)
+
+  sealed trait ApplicationState
+  case object NotPresent extends ApplicationState
+  case object Running extends ApplicationState
+
+
+  sealed trait ClusterStatus
+  case object Connected extends ClusterStatus
+  case object Offline extends ClusterStatus
 }
