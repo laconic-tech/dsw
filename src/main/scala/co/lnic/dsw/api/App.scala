@@ -1,6 +1,7 @@
 package co.lnic.dsw.api
 
 import cats.effect._
+import co.lnic.dsw.api.endpoints.UserEndpoint
 import co.lnic.dsw.domain.interpreters._
 import fs2.StreamApp
 import org.http4s.server.blaze.BlazeBuilder
