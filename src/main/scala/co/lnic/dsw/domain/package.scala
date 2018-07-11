@@ -7,12 +7,13 @@ package object domain {
 
   // users and roles
   type UserId = String
-  type ApplicationId = UUID
-  case class ApplicationSpecId(name: String, version: Short = 1)
-
   case class User(id: UserId, name: String, email: String, namespace: String)
 
+  case class UserAlreadyExists(name: String)
+
   // cluster definitions
+  type ApplicationId = UUID
+  case class ApplicationSpecId(name: String, version: Short = 1)
   case class ApplicationSpec(id: ApplicationSpecId,
                              chart: Path,
                              services: Seq[ExposedService],

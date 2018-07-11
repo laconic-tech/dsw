@@ -3,11 +3,11 @@ package co.lnic.dsw.api.endpoints
 import cats.data._
 import cats.effect._
 import cats.implicits._
-
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.HttpService
-import org.http4s.dsl.Http4sDsl
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl._
 
 import co.lnic.dsw.api.adts._
 import co.lnic.dsw.domain.algebras._
@@ -15,6 +15,9 @@ import co.lnic.dsw.domain.algebras._
 
 class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], store: DataStoreAlgebra[F])
   extends Http4sDsl[F] {
+
+
+  implicit val createApplicationDecoder = jsonOf[F, CreateApplicationRequest]
 
   val service = HttpService[F] {
 
@@ -46,11 +49,11 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
         user <- EitherT.fromOptionF(store.getUserById(userId).value, "User not found")
         spec <- EitherT.fromOptionF(store.getApplicationSpecBy(create.specId).value, "Application Spec not found")
         response <- applications.provision(create.name, spec, user)
-      } yield Ok(response.asJson)
+      } yield response
 
       result.value.flatMap {
         case Left(error) => BadRequest(error)
-        case Right(response) => Ok(response)
+        case Right(response) => Ok(response.asJson)
       }
   }
 }
