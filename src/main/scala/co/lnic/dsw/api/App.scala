@@ -3,6 +3,7 @@ package co.lnic.dsw.api
 import cats.effect._
 import co.lnic.dsw.api.endpoints.UserEndpoint
 import co.lnic.dsw.domain.interpreters._
+import co.lnic.dsw.domain.interpreters.stores.MemoryStoreInterpreter
 import fs2.StreamApp
 import org.http4s.server.blaze.BlazeBuilder
 
@@ -20,6 +21,7 @@ object ServerStream {
 
   def stream[F[_]: Effect](implicit ec: ExecutionContext) = {
     // repos and services
+    val dataStore = new MemoryStoreInterpreter[F]
     val users = new UserAlgebraInterpreter[F]
     val cluster = new ClusterAlgebraInterpreter[F]
     val apps = new ApplicationAlgebraInterpreter[F](cluster)

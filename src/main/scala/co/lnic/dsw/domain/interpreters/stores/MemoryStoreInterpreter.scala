@@ -4,6 +4,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 import co.lnic.dsw.domain.algebras._
+import co.lnic.dsw.domain.domain.UserAlreadyExists
 import co.lnic.dsw.domain.domain._
 
 import scala.collection.concurrent.TrieMap
@@ -20,24 +21,18 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
 
   override def createUser(username: String,
                           name: String,
-                          email: String): EitherT[F, UserAlreadyExists, User] = {
-
-    val result = EitherT.cond()
-
-      if (!users.contains(username)) {
-        EitherT.right[UserAlreadyExists]()
-      }
+                          email: String): EitherT[F, UserAlreadyExists, User] =
+    EitherT {
+      {
+        if (users.contains(username)) {
+          Left(UserAlreadyExists(username))
+        } else {
+          val user = User(username, name, email, "kube-public")
+          users.put(user.id, user)
+          Right(user)
+        }
+      }.pure[F]
     }
-
-
-    for {
-      user  <- EitherT.cond(!users.contains(username),
-                             User(username, name, email, "kube-public"),
-                            UserAlreadyExists(username))
-
-      _     <- users.put(username, user)
-    } yield user
-  }
 
   override def getApplicationSpecs(): F[Seq[ApplicationSpec]] =
     specs.values.toSeq.filter(_.status == Active).pure[F]
