@@ -3,6 +3,7 @@ package co.lnic.dsw.api.endpoints
 import cats.data._
 import cats.effect._
 import cats.implicits._
+
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s._
@@ -10,10 +11,12 @@ import org.http4s.circe._
 import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
+import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
+
+import co.lnic.dsw.api._
 import co.lnic.dsw.api.adts._
 import co.lnic.dsw.domain.algebras._
 import co.lnic.dsw.domain.domain._
-import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
 
 
 class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], store: DataStoreAlgebra[F])
@@ -26,23 +29,30 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
 
   val service: HttpService[F] = auth(AuthedService[User, F] {
 
-    case GET -> Root / "applications" / name as user =>
+    case GET -> Root / "applications" as user =>
+      for {
+        apps <- applications.byUser(user)
+        resp <- Ok(apps.asJson)
+      } yield resp
+
+    case GET -> Root / "applications" / ApplicationIdVar(appId) as user =>
       // get the application by it's id and return
       // - the current state
       // - exposed http services and where to go to get them
-      Ok()
+      applications.byId(appId).value.flatMap {
+        case Some(app) => Ok(app.asJson)
+        case None => NotFound()
+      }
 
-    case POST -> Root / "applications" / name / "start" as user =>
+    case authRequest @ POST -> Root / "applications" / name / "start" as user =>
+      NotImplemented()
 
-      //      applications.provision(name)
-      Ok()
+    case authRequest @ POST -> Root / "applications" / name / "stop" as user =>
+      NotImplemented()
 
-    case POST -> Root / "applications" / name / "stop" as user =>
-      Ok()
-
-    case req @ POST -> Root / "applications" / name / "share" as user =>
+    case authRequest @ POST -> Root / "applications" / name / "share" as user =>
       // share an application with another user/users
-      Ok()
+      NotImplemented()
 
     case authRequest @ POST -> Root / "applications" as user =>
       // we receive the id of the spec

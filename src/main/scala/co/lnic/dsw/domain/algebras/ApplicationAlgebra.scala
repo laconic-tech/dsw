@@ -1,8 +1,8 @@
 package co.lnic.dsw.domain.algebras
 
 import cats.data._
-
 import co.lnic.dsw.domain.domain.Application
+import co.lnic.dsw.domain.domain.ApplicationId
 import co.lnic.dsw.domain.domain.ApplicationSpec
 import co.lnic.dsw.domain.domain.ApplicationState
 import co.lnic.dsw.domain.domain.User
@@ -38,5 +38,12 @@ trait ApplicationAlgebra[F[_]] {
     * @return
     */
   def byUser(user: User): F[List[Application]]
+
+  /**
+    * Returns an specific app
+    * @param appId
+    * @return
+    */
+  def byId(appId: ApplicationId): OptionT[F, Application]
 }
 

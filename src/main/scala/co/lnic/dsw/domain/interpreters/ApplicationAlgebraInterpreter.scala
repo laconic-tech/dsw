@@ -77,4 +77,12 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     // TODO: check the state of the application in the cluster or some sort of cached view
     List.empty[Application].pure[F]
   }
+
+  /**
+    * Returns an specific app
+    *
+    * @param appId
+    * @return
+    */
+  override def byId(appId: ApplicationId): OptionT[F, Application] = ???
 }
