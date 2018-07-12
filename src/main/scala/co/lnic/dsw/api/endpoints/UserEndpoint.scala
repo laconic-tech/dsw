@@ -21,12 +21,12 @@ class UserEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], users: Use
     case GET -> Root/ "users" / name / "applications" =>
       val result = for {
         user <- users.byId(name)
-        apps <- EitherT.right[String](applications.byUser(user))
+        apps <- OptionT.liftF(applications.byUser(user))
       } yield apps
 
       result.value.flatMap {
-        case Left(msg) => BadRequest(msg)
-        case Right(apps) => Ok(apps.asJson)
+        case Some(apps) => Ok(apps.asJson)
+        case None => NotFound()
       }
   }
 }

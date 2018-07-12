@@ -22,9 +22,11 @@ object ServerStream {
   def stream[F[_]: Effect](implicit ec: ExecutionContext) = {
     // repos and services
     val dataStore = new MemoryStoreInterpreter[F]
-    val users = new UserAlgebraInterpreter[F]
+    dataStore.createUser("seb", "seb", "seb@seb.com")
+
+    val users = new UserAlgebraInterpreter[F](dataStore)
     val cluster = new ClusterAlgebraInterpreter[F]
-    val apps = new ApplicationAlgebraInterpreter[F](cluster)
+    val apps = new ApplicationAlgebraInterpreter[F](dataStore, cluster)
 
     // endpoints
     val userEndpoint = new UserEndpoint[F](apps, users).service

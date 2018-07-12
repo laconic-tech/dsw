@@ -12,7 +12,7 @@ import co.lnic.dsw.domain.domain._
 import scala.language.higherKinds
 
 
-class ApplicationAlgebraInterpreter[F[_]: Monad](cluster: ClusterAlgebra[F])
+class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F], cluster: ClusterAlgebra[F])
   extends ApplicationAlgebra[F] {
 
   /**
