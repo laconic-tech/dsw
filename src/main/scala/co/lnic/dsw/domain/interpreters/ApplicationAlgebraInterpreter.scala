@@ -28,6 +28,7 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
                          owner: User): EitherT[F, String, Application] = {
 
     applicationSpec.status match {
+
       case Active =>
         // TODO: check whether the owner's namespace exists, failing if it doesn't
 
@@ -42,7 +43,8 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
                   )
                }
 
-      case Disabled => EitherT.leftT[F, Application]("Application has been disabled")
+      case Draft => EitherT.leftT[F, Application]("Can't create Application in Draft state.")
+      case Disabled(message) => EitherT.leftT[F, Application](s"Application has been disabled: $message")
     }
   }
 

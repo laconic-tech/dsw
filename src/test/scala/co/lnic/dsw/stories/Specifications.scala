@@ -30,7 +30,7 @@ class StorageResourcesSpec extends Specification {
   info("so that my data is not lost after a cluster is stopped")
 }
 
-class ClusterProvisioningSpec extends Specification {
+class ApplicationSpec extends Specification {
 
   info("As a `Data Analyst`")
   info("I want to be able to provision a cluster on-demand")
@@ -43,6 +43,7 @@ class ClusterProvisioningSpec extends Specification {
   feature("Provision a cluster from a specification") {
     // we should attach all of the users storage options
     // additionally allow to attach other resources on all of the containers
+    // while it is being deployed, show the logs/events
   }
 
   feature("Scale up / down a running cluster") _
@@ -53,7 +54,7 @@ class ClusterProvisioningSpec extends Specification {
   feature("Share a cluster instance with another Data Analyst") _
 }
 
-class ClusterDefinitionSpec extends Specification {
+class ApplicationSpecSpec extends Specification {
   info("As an `Administrator`")
   info("I want to be able to define cluster specifications")
   info("and allow users to create instances from them")

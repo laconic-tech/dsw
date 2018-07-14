@@ -1,5 +1,7 @@
 package co.lnic.dsw.domain.interpreters.stores
 
+import java.nio.file.Path
+
 import cats._
 import cats.data._
 import cats.implicits._
@@ -40,7 +42,14 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
   override def getApplicationSpecBy(specId: ApplicationSpecId): OptionT[F, ApplicationSpec] =
     OptionT(specs.get(specId).pure[F])
 
-  override def createApplicationSpec(): Unit = ???
+  override def createApplicationSpec(name: String, chart: Path, services: Seq[ExposedService]): EitherT[F, String, ApplicationSpec] =
+    EitherT {
+      val version = specs.keySet.map(_.version).max + 1
+      val spec = ApplicationSpec(ApplicationSpecId(name, version), chart, services, Active)
+      specs.put(spec.id, spec)
+
+      Either.right[String, ApplicationSpec](spec).pure[F]
+    }
 
   override def getApplicationsByUserId(userId: UserId): F[Seq[Application]] =
     apps.filterKeys(id => userApps.getOrElseUpdate(userId, List()).contains(id))

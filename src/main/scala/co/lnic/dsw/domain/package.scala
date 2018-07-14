@@ -13,11 +13,14 @@ package object domain {
 
   // cluster definitions
   type ApplicationId = UUID
-  case class ApplicationSpecId(name: String, version: Short = 1)
+  case class ApplicationSpecId(name: String, version: Int = 1)
   case class ApplicationSpec(id: ApplicationSpecId,
                              chart: Path,
                              services: Seq[ExposedService],
-                             status: ClusterSpecificationStatus)
+                             status: ApplicationSpecStatus)
+
+  trait ChartLocation
+  case class TarChartLocation(path: Path) extends ChartLocation
 
   // an specification can expose services
   case class ExposedService(name: String, description: String, iconUri: Option[String], protocol: ServiceProtocol, port: Int)
@@ -30,9 +33,10 @@ package object domain {
 
 
   // supported cluster spec status
-  sealed trait ClusterSpecificationStatus
-  case object Active extends ClusterSpecificationStatus
-  case object Disabled extends ClusterSpecificationStatus
+  sealed trait ApplicationSpecStatus
+  case object Draft extends ApplicationSpecStatus
+  case object Active extends ApplicationSpecStatus
+  case class Disabled(reason: String) extends ApplicationSpecStatus
 
   // resources
   case class StorageResource(name: String, owner: UserId, visibility: Visibility, uri: String)

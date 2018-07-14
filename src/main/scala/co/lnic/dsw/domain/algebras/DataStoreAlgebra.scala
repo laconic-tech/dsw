@@ -1,8 +1,9 @@
 package co.lnic.dsw.domain.algebras
 
+import java.nio.file.Path
+
 import cats.data._
 import cats.implicits._
-
 import co.lnic.dsw.domain.domain._
 
 trait DataStoreAlgebra[F[_]] {
@@ -14,7 +15,7 @@ trait DataStoreAlgebra[F[_]] {
   // application specs
   def getApplicationSpecs(): F[Seq[ApplicationSpec]]
   def getApplicationSpecBy(specId: ApplicationSpecId): OptionT[F, ApplicationSpec]
-  def createApplicationSpec()
+  def createApplicationSpec(name: String, chart: Path, services: Seq[ExposedService]): EitherT[F, String, ApplicationSpec]
 
   // application
   def getApplicationsByUserId(userId: UserId): F[Seq[Application]]
