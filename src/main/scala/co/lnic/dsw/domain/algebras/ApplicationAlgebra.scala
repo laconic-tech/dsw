@@ -37,7 +37,7 @@ trait ApplicationAlgebra[F[_]] {
     * @param user
     * @return
     */
-  def byUser(user: User): F[List[Application]]
+  def byUser(user: User): F[Seq[Application]]
 
   /**
     * Returns an specific app

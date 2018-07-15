@@ -75,10 +75,8 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     * @param user
     * @return
     */
-  override def byUser(user: User): F[List[Application]] = {
-    // TODO: check the state of the application in the cluster or some sort of cached view
-    List.empty[Application].pure[F]
-  }
+  // TODO: check the state of the application in the cluster or some sort of cached view
+  override def byUser(user: User): F[Seq[Application]] = dataStore.getApplicationsByUserId(user.id)
 
   /**
     * Returns an specific app

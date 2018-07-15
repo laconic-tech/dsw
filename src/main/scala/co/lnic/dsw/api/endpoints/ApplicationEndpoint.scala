@@ -11,11 +11,11 @@ import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
-
 import co.lnic.dsw.api._
 import co.lnic.dsw.api.adts._
 import co.lnic.dsw.domain.algebras._
 import co.lnic.dsw.domain.domain._
+import org.http4s.blaze.http.http_parser.Http1ClientParser
 
 
 class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], store: DataStoreAlgebra[F])
@@ -42,6 +42,22 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
         case Some(app) => Ok(app.asJson)
         case None => NotFound()
       }
+
+    case authedReq @ GET -> Root / "applications" / ApplicationIdVar(appId) / "services" / serviceName as user =>
+        NotImplemented()
+//        case req =>
+//          if(verifyRequest(req)) {
+//            for {
+//              client <- Http1Client[IO]()
+//              newHost = "host2"
+//              newAuthority = Authority(host = RegName("host2"), port = Some(80))
+//              proxiedReq =
+//
+//            } yield response
+//          } else {
+//            Forbidden("Some forbidden message...")
+//          }
+//      }
 
     case authRequest @ POST -> Root / "applications" / name / "start" as user =>
       NotImplemented()
