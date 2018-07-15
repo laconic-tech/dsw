@@ -56,7 +56,7 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     */
   override def stop(application: Application): EitherT[F, String, Application] = {
     // delete the application in the cluster
-    cluster.kill(application.name, application.namespace)
+    cluster.uninstall(application.name, application.namespace)
       .map(_ => application) // TODO: What to do
   }
 

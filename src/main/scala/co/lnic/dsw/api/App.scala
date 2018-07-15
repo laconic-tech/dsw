@@ -7,6 +7,7 @@ import co.lnic.dsw.api.endpoints.UserEndpoint
 import co.lnic.dsw.domain.domain
 import co.lnic.dsw.domain.domain.ExposedService
 import co.lnic.dsw.domain.interpreters._
+import co.lnic.dsw.domain.interpreters.clusters.KubernetesInterpreter
 import co.lnic.dsw.domain.interpreters.stores.MemoryStoreInterpreter
 import com.google.api.Http
 import fs2.StreamApp
@@ -32,12 +33,12 @@ object ServerStream {
       "jupyter",
       File("infra/charts/jupyter-0.7.3.tgz").path,
       Seq(
-        ExposedService("jupyter", "Jupyter Notebook", None, domain.Http, 80)
+        ExposedService("jupyter", "Jupyter Notebook", None, domain.Http, 8888)
       )
     )
 
     val users = new UserAlgebraInterpreter[F](dataStore)
-    val cluster = new ClusterAlgebraInterpreter[F]
+    val cluster = new KubernetesInterpreter[F]
     val apps = new ApplicationAlgebraInterpreter[F](dataStore, cluster)
 
     // endpoints

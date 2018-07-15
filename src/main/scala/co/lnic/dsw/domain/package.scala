@@ -54,7 +54,7 @@ package object domain {
   case object Running extends ApplicationState
 
 
-  sealed trait ClusterStatus
-  case object Connected extends ClusterStatus
+  sealed trait ClusterStatus extends Product with Serializable
+  case object Online extends ClusterStatus
   case object Offline extends ClusterStatus
 }
