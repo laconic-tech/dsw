@@ -72,7 +72,7 @@ trait ClusterAlgebra[F[_]] {
     * @param namespace
     * @return
     */
-  def install(chart: Path, name: String, namespace: String): EitherT[F, String, Status.Code
+  def install(chart: Path, name: String, namespace: String): EitherT[F, String, Status.Code]
 
   /**
     * Kills an application
