@@ -1,6 +1,7 @@
 package co.lnic.dsw.domain.interpreters.stores
 
 import java.nio.file.Path
+import java.util.UUID
 
 import cats._
 import cats.data._
@@ -57,11 +58,16 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
         .values.toSeq
         .pure[F]
 
-  override def createApplication(): Unit = ???
 
   override def deleteApplication(): Unit = ???
 
   override def shareApplication(application: Application, user: User): Unit = ???
 
-
+  override def createApplication(name: String, namespace: String, specId: ApplicationSpecId): EitherT[F, String, Application] = {
+    EitherT {
+      val app = Application(UUID.randomUUID, name, namespace, specId)
+      apps.put(app.id, app)
+      Either.right[String, Application](app).pure[F]
+    }
+  }
 }

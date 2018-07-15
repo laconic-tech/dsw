@@ -5,6 +5,7 @@ import co.lnic.dsw.domain.domain.Application
 import co.lnic.dsw.domain.domain.ApplicationId
 import co.lnic.dsw.domain.domain.ApplicationSpec
 import co.lnic.dsw.domain.domain.ApplicationState
+import co.lnic.dsw.domain.domain.RunningApplication
 import co.lnic.dsw.domain.domain.User
 
 trait ApplicationAlgebra[F[_]] {
@@ -15,7 +16,7 @@ trait ApplicationAlgebra[F[_]] {
     * @param owner
     * @return
     */
-  def provision(name: String, cluster: ApplicationSpec, owner: User): EitherT[F, String, Application]
+  def provision(name: String, cluster: ApplicationSpec, owner: User): EitherT[F, String, RunningApplication]
 
   /**
     * Removes an application from the cluster

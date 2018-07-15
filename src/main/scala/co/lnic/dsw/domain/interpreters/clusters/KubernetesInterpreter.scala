@@ -7,6 +7,8 @@ import java.util.zip.GZIPInputStream
 import better.files.File
 import cats._
 import cats.data._
+import cats.effect.Fiber
+import cats.effect.IO
 import cats.implicits._
 import co.lnic.dsw.domain.algebras._
 import co.lnic.dsw.domain.domain._
@@ -15,7 +17,9 @@ import hapi.release.StatusOuterClass.Status
 import hapi.services.tiller.Tiller.GetReleaseStatusRequest
 import hapi.services.tiller.Tiller.InstallReleaseRequest
 import hapi.services.tiller.Tiller.UninstallReleaseRequest
+import io.fabric8.kubernetes.api.KubernetesHelper
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
+import org.http4s.HttpService
 import org.kamranzafar.jtar.TarInputStream
 import org.microbean.helm.Tiller
 import org.microbean.helm.chart.TapeArchiveChartLoader
@@ -179,4 +183,24 @@ class KubernetesInterpreter[F[_]: Applicative] extends ClusterAlgebra[F] {
       }.toEither.left.map(_.getMessage)
         .pure[F]
     }
+
+  def serve(name: String, namespace:String, remotePort: Port): F[IO[Port]] =
+    IO(new DefaultKubernetesClient())
+      .map(_.pods.inNamespace(namespace).withName(name))
+      .map(_.portForward(remotePort))
+      .map(_.getLocalPort)
+      .pure[F]
+
+
+  def getServiceUrl(applicationName: String, serviceName: String, namespace: String, servicePort: Port): F[String] = {
+    k8s { k =>
+      // TODO: Error Handling
+      KubernetesHelper.getServiceURL(
+        k.services
+         .inNamespace(namespace)
+         .withName(s"$applicationName-$serviceName")
+         .get()
+        )
+    }.pure[F]
+  }
 }

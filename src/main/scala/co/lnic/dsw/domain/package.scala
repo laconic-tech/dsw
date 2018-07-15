@@ -57,4 +57,10 @@ package object domain {
   sealed trait ClusterStatus extends Product with Serializable
   case object Online extends ClusterStatus
   case object Offline extends ClusterStatus
+
+  type Port = Int
+
+  // running application
+  case class Service(name: String, url: String)
+  case class RunningApplication(application: Application, services: Seq[Service])
 }

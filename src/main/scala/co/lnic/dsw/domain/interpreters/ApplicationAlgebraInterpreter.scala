@@ -25,7 +25,7 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     */
   override def provision(name: String,
                          applicationSpec: ApplicationSpec,
-                         owner: User): EitherT[F, String, Application] = {
+                         owner: User): EitherT[F, String, RunningApplication] = {
 
     applicationSpec.status match {
 
@@ -33,18 +33,20 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
         // TODO: check whether the owner's namespace exists, failing if it doesn't
 
         // install the application in the cluster and return the result
-        cluster.install(applicationSpec.chart, name, owner.namespace)
-               .map { _ =>
-                  Application(
-                    UUID.randomUUID,
-                    name,
-                    owner.namespace,
-                    applicationSpec.id
-                  )
-               }
+        for {
+          _         <- cluster.install(applicationSpec.chart, name, owner.namespace)
+          app       <- dataStore.createApplication(name, owner.namespace, applicationSpec.id)
+          services  <- EitherT.liftF(applicationSpec
+                        .services.map(s =>
+                          cluster.getServiceUrl(app.name, s.name, app.namespace, s.port)
+                               .map(url => Service(s.name, url)))
+                               .toList
+                               .traverse(x => x))
 
-      case Draft => EitherT.leftT[F, Application]("Can't create Application in Draft state.")
-      case Disabled(message) => EitherT.leftT[F, Application](s"Application has been disabled: $message")
+        } yield RunningApplication(app, services)
+
+      case Draft => EitherT.leftT[F, RunningApplication]("Can't create Application in Draft state.")
+      case Disabled(message) => EitherT.leftT[F, RunningApplication](s"Application has been disabled: $message")
     }
   }
 

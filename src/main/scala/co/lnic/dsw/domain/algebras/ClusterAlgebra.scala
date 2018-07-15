@@ -3,7 +3,9 @@ package co.lnic.dsw.domain.algebras
 import java.nio.file.Path
 
 import cats.data._
+import cats.effect.IO
 import co.lnic.dsw.domain.domain.ClusterStatus
+import co.lnic.dsw.domain.domain.Port
 import hapi.release.StatusOuterClass.Status
 
 trait ClusterAlgebra[F[_]] {
@@ -81,4 +83,14 @@ trait ClusterAlgebra[F[_]] {
     * @return
     */
   def uninstall(name: String, namespace: String): EitherT[F, String, Boolean]
+
+  /**
+    * Fetches the url for a service
+    * @param applicationName
+    * @param serviceName
+    * @param namespace
+    * @param servicePort
+    * @return
+    */
+  def getServiceUrl(applicationName: String, serviceName: String, namespace: String, servicePort: Port): F[String]
 }

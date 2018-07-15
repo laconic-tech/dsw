@@ -17,7 +17,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic" % "0.9.3",
   "io.circe" %% "circe-parser" % "0.9.3",
 
-  // helm
+  // k8s and helm
+  "io.fabric8" % "kubernetes-api" % "3.0.12",
   "io.netty" % "netty-tcnative-boringssl-static" % "2.0.6.Final",
   "org.microbean" % "microbean-helm" % "2.8.2.1.1.0" exclude("io.netty", "netty-tcnative-boringssl-static"),
 
