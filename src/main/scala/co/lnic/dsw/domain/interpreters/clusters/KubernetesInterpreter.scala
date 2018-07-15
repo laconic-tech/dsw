@@ -132,13 +132,16 @@ class KubernetesInterpreter[F[_]: Applicative] extends ClusterAlgebra[F] {
     EitherT {
       Try {
         tiller { t =>
+          val chartBuilder = load(chart)
+
           // issue install command
           t.getReleaseServiceBlockingStub
            .installRelease(
              InstallReleaseRequest.newBuilder()
                .setName(name)
                .setNamespace(namespace)
-               .setChart(load(chart))
+               .setChart(chartBuilder)
+               .setValues(chartBuilder.getValues)
                .build()
            )
             .getRelease

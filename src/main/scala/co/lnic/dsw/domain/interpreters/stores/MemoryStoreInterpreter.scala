@@ -10,6 +10,7 @@ import co.lnic.dsw.domain.domain.UserAlreadyExists
 import co.lnic.dsw.domain.domain._
 
 import scala.collection.concurrent.TrieMap
+import scala.util.Try
 
 class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
 
@@ -44,7 +45,7 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
 
   override def createApplicationSpec(name: String, chart: Path, services: Seq[ExposedService]): EitherT[F, String, ApplicationSpec] =
     EitherT {
-      val version = specs.keySet.map(_.version).max + 1
+      val version = Try(specs.keySet.map(_.version).max + 1).getOrElse(1)
       val spec = ApplicationSpec(ApplicationSpecId(name, version), chart, services, Active)
       specs.put(spec.id, spec)
 

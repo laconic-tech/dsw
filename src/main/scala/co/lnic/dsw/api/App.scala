@@ -3,6 +3,7 @@ package co.lnic.dsw.api
 import better.files.File
 import cats.effect._
 import co.lnic.dsw.api.endpoints.ApplicationEndpoint
+import co.lnic.dsw.api.endpoints.ApplicationSpecEndpoint
 import co.lnic.dsw.api.endpoints.UserEndpoint
 import co.lnic.dsw.domain.domain
 import co.lnic.dsw.domain.domain.ExposedService
@@ -43,6 +44,7 @@ object ServerStream {
 
     // endpoints
     val userEndpoint = new UserEndpoint[F](apps, users).service
+    val specsEndpoint = new ApplicationSpecEndpoint[F](dataStore).service
     val applicationsEndpoint = new ApplicationEndpoint[F](apps, dataStore).service
 
     // server
@@ -50,6 +52,7 @@ object ServerStream {
       .bindHttp(8080, "0.0.0.0")
       .mountService(userEndpoint, "/")
       .mountService(applicationsEndpoint, "/")
+      .mountService(specsEndpoint, "/")
       .serve
   }
 }
