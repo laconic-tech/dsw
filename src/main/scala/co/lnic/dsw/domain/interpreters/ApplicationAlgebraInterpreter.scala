@@ -35,7 +35,7 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
         // install the application in the cluster and return the result
         for {
           _         <- cluster.install(applicationSpec.chart, name, owner.namespace)
-          app       <- dataStore.createApplication(name, owner.namespace, applicationSpec.id)
+          app       <- dataStore.createApplication(name, owner.namespace, applicationSpec.id, owner.id)
           services  <- EitherT.liftF(applicationSpec
                         .services.map(s =>
                           cluster.getServiceUrl(app.name, s.name, app.namespace, s.port)
@@ -86,7 +86,7 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     * @param appId
     * @return
     */
-  override def byId(appId: ApplicationId): OptionT[F, Application] = ???
+  override def byId(appId: ApplicationId): OptionT[F, Application] = dataStore.getApplicationBy(appId)
 
   /**
     * Gets an application

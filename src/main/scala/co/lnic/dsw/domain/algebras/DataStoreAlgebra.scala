@@ -19,9 +19,10 @@ trait DataStoreAlgebra[F[_]] {
 
   // application
   def getApplicationsByUserId(userId: UserId): F[Seq[Application]]
+  def getApplicationBy(id: ApplicationId): OptionT[F, Application]
   def getApplicationBy(id: ApplicationId, userId: UserId): OptionT[F, Application]
 
-  def createApplication(name: String, namespace: String, specId: ApplicationSpecId): EitherT[F, String, Application]
+  def createApplication(name: String, namespace: String, specId: ApplicationSpecId, userId: UserId): EitherT[F, String, Application]
   def deleteApplication()
   def shareApplication(application: Application, user: User)
 }

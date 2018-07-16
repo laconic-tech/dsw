@@ -63,10 +63,14 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
 
   override def shareApplication(application: Application, user: User): Unit = ???
 
-  override def createApplication(name: String, namespace: String, specId: ApplicationSpecId): EitherT[F, String, Application] = {
+  override def createApplication(name: String, namespace: String, specId: ApplicationSpecId, userId: UserId): EitherT[F, String, Application] = {
     EitherT {
       val app = Application(UUID.randomUUID, name, namespace, specId)
       apps.put(app.id, app)
+      userApps.get(userId) match {
+        case Some(items) => userApps.put(userId, app.id :: items)
+        case None => userApps.put(userId, List(app.id))
+      }
       Either.right[String, Application](app).pure[F]
     }
   }
@@ -74,5 +78,10 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
   override def getApplicationBy(id: ApplicationId, userId: UserId): OptionT[F, Application] =
     OptionT {
       getApplicationsByUserId(userId).map(_.find(app => app.id == id))
+    }
+
+  override def getApplicationBy(id: ApplicationId): OptionT[F, Application] =
+    OptionT {
+      apps.filterKeys(key => key == id).values.headOption.pure[F]
     }
 }

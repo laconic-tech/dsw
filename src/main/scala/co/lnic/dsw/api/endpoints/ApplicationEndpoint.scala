@@ -11,7 +11,7 @@ import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
-//import org.http4s.client.blaze._
+import org.http4s.client.blaze._
 
 import co.lnic.dsw.api._
 import co.lnic.dsw.api.adts._
@@ -45,28 +45,24 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
       }
 
     case authReq @ _ -> "applications" /: ApplicationIdVar(appId) /: "services" /: serviceName /: path as user =>
+        val result = for {
+          // fetch the application by id and current user
+          app <- applications.byIdAndUserId(appId, user.id)
+          // do we have a service named as requested
+          svc <- OptionT(app.services.find(_.name == serviceName).pure[F])
+          // create a client
+          client <- OptionT.liftF(Http1Client[F]())
+          // create the path for the request
+          uri = Uri.fromString(svc.url).map(_.withPath(path.toString)).right.get // !!!
+          request = authReq.req.withUri(uri) // FIXME: Wrong path is worked outh
+          // execute the request, and get the response back
+          response <- OptionT.liftF(client.fetch(request)(_.pure[F]))
+        } yield response
 
-//        val result = for {
-//          // fetch the application by id and current user
-//          app <- applications.byIdAndUserId(appId, user.id)
-//          // do we have a service named as requested
-//          svc <- OptionT(app.services.find(_.name == serviceName).pure[F])
-//          // open a connection
-//          client <- Http1Client[F]()
-//        } yield svc.url
-
-
-        // fetch the application for the current user
-        // get the given service from the spec
-        // get the url for this service
-
-//        for {
-//          client <- Http1Client[F]()
-//          _ <- client
-//        }
-        NotImplemented()
-
-
+        result.value.flatMap {
+          case Some(response) => response.pure[F]
+          case None => ServiceUnavailable()
+        }
 
     case authRequest @ POST -> Root / "applications" / name / "start" as user =>
       NotImplemented()
