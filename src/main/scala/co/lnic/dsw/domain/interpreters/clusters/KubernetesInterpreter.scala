@@ -184,23 +184,16 @@ class KubernetesInterpreter[F[_]: Applicative] extends ClusterAlgebra[F] {
         .pure[F]
     }
 
-  def serve(name: String, namespace:String, remotePort: Port): F[IO[Port]] =
+  def proxy(name: String, namespace:String, remotePort: Port): F[IO[Port]] =
     IO(new DefaultKubernetesClient())
       .map(_.pods.inNamespace(namespace).withName(name))
       .map(_.portForward(remotePort))
       .map(_.getLocalPort)
       .pure[F]
 
-
   def getServiceUrl(applicationName: String, serviceName: String, namespace: String, servicePort: Port): F[String] = {
     k8s { k =>
-      // TODO: Error Handling
-      KubernetesHelper.getServiceURL(
-        k.services
-         .inNamespace(namespace)
-         .withName(s"$applicationName-$serviceName")
-         .get()
-        )
+      s"http://127.0.0.1:8001/api/v1/namespaces/$namespace/services/$applicationName-$serviceName:$servicePort/proxy/"
     }.pure[F]
   }
 }

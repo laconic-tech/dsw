@@ -11,11 +11,12 @@ import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
+//import org.http4s.client.blaze._
+
 import co.lnic.dsw.api._
 import co.lnic.dsw.api.adts._
 import co.lnic.dsw.domain.algebras._
 import co.lnic.dsw.domain.domain._
-import org.http4s.blaze.http.http_parser.Http1ClientParser
 
 
 class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], store: DataStoreAlgebra[F])
@@ -43,21 +44,29 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
         case None => NotFound()
       }
 
-    case authedReq @ GET -> Root / "applications" / ApplicationIdVar(appId) / "services" / serviceName as user =>
+    case authReq @ _ -> "applications" /: ApplicationIdVar(appId) /: "services" /: serviceName /: path as user =>
+
+//        val result = for {
+//          // fetch the application by id and current user
+//          app <- applications.byIdAndUserId(appId, user.id)
+//          // do we have a service named as requested
+//          svc <- OptionT(app.services.find(_.name == serviceName).pure[F])
+//          // open a connection
+//          client <- Http1Client[F]()
+//        } yield svc.url
+
+
+        // fetch the application for the current user
+        // get the given service from the spec
+        // get the url for this service
+
+//        for {
+//          client <- Http1Client[F]()
+//          _ <- client
+//        }
         NotImplemented()
-//        case req =>
-//          if(verifyRequest(req)) {
-//            for {
-//              client <- Http1Client[IO]()
-//              newHost = "host2"
-//              newAuthority = Authority(host = RegName("host2"), port = Some(80))
-//              proxiedReq =
-//
-//            } yield response
-//          } else {
-//            Forbidden("Some forbidden message...")
-//          }
-//      }
+
+
 
     case authRequest @ POST -> Root / "applications" / name / "start" as user =>
       NotImplemented()

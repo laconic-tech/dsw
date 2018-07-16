@@ -87,4 +87,25 @@ class ApplicationAlgebraInterpreter[F[_]: Monad](dataStore: DataStoreAlgebra[F],
     * @return
     */
   override def byId(appId: ApplicationId): OptionT[F, Application] = ???
+
+  /**
+    * Gets an application
+    *
+    * @param id
+    * @param userId
+    * @return
+    */
+  override def byIdAndUserId(id: ApplicationId, userId: UserId): OptionT[F, RunningApplication] = {
+    for {
+      app       <- dataStore.getApplicationBy(id, userId)
+      spec      <- dataStore.getApplicationSpecBy(app.applicationSpecId)
+      services  <- OptionT.liftF(
+                      spec.services.map(s =>
+                        cluster.getServiceUrl(app.name, s.name, app.namespace, s.port).map(url => Service(s.name, url))
+                      )
+                      .toList
+                      .traverse(x => x)
+                   )
+    } yield RunningApplication(app, services)
+  }
 }

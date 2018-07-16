@@ -70,4 +70,9 @@ class MemoryStoreInterpreter[F[_]: Applicative] extends DataStoreAlgebra[F] {
       Either.right[String, Application](app).pure[F]
     }
   }
+
+  override def getApplicationBy(id: ApplicationId, userId: UserId): OptionT[F, Application] =
+    OptionT {
+      getApplicationsByUserId(userId).map(_.find(app => app.id == id))
+    }
 }
