@@ -12,14 +12,16 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
 import org.http4s.client.blaze._
-
 import co.lnic.dsw.api._
 import co.lnic.dsw.api.adts._
+import co.lnic.dsw.api.support.Http
 import co.lnic.dsw.domain.algebras._
 import co.lnic.dsw.domain.domain._
 
 
-class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], store: DataStoreAlgebra[F])
+class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F],
+                                        store: DataStoreAlgebra[F],
+                                        http: Http[F])
   extends Http4sDsl[F] {
 
   implicit val createApplicationDecoder: EntityDecoder[F, CreateApplicationRequest] = jsonOf[F, CreateApplicationRequest]
@@ -50,13 +52,14 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
           app <- applications.byIdAndUserId(appId, user.id)
           // do we have a service named as requested
           svc <- OptionT(app.services.find(_.name == serviceName).pure[F])
-          // create a client
-          client <- OptionT.liftF(Http1Client[F]())
-          // create the path for the request
-          uri = Uri.fromString(svc.url).map(_ / path.toString)
-          request = authReq.req.withUri(uri.right.get) // HACK
-          // execute the request, and get the response back
-          response <- OptionT.liftF(client.fetch(request)(_.pure[F]))
+          // proxy the request
+          response <- OptionT(
+                        Uri.fromString(svc.url)
+                         .map(_ / path.toString)
+                         .map(uri => http.proxy(authReq.req, uri))
+                         .toOption
+                         .traverse(x => x)
+                      )
         } yield response
 
         result.value.flatMap {
