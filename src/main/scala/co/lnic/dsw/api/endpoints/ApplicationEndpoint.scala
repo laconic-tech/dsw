@@ -53,8 +53,8 @@ class ApplicationEndpoint[F[_]: Effect](applications: ApplicationAlgebra[F], sto
           // create a client
           client <- OptionT.liftF(Http1Client[F]())
           // create the path for the request
-          uri = Uri.fromString(svc.url).map(_.withPath(path.toString)).right.get // !!!
-          request = authReq.req.withUri(uri) // FIXME: Wrong path is worked outh
+          uri = Uri.fromString(svc.url).map(_ / path.toString)
+          request = authReq.req.withUri(uri.right.get) // HACK
           // execute the request, and get the response back
           response <- OptionT.liftF(client.fetch(request)(_.pure[F]))
         } yield response
